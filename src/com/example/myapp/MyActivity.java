@@ -49,7 +49,17 @@ public class MyActivity extends ListActivity {
                 GregorianCalendar end = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
                 end.setTimeInMillis(calCursor.getLong(2));
                 String title = calCursor.getString(4);
-                result.add(id + " " + formatter.format(begin.getTime()) + " " + formatter.format(end.getTime()) + " " + title);
+                long eventId = calCursor.getLong(3);
+                Cursor attendeeCursor = CalendarContract.Attendees.query(getContentResolver(), eventId, new String[] {CalendarContract.Attendees.ATTENDEE_EMAIL, CalendarContract.Attendees.ATTENDEE_RELATIONSHIP});
+                String email = "";
+                if (attendeeCursor.moveToFirst()) {
+                    do {
+                        if (attendeeCursor.getInt(1) == CalendarContract.Attendees.RELATIONSHIP_ORGANIZER) {
+                            email = attendeeCursor.getString(0);
+                        }
+                    } while (attendeeCursor.moveToNext());
+                }
+                result.add(title + " " + formatter.format(begin.getTime()) + " " + formatter.format(end.getTime()) + " " + "organizer mail: " + email);
             } while (calCursor.moveToNext());
         }
         return result;
@@ -59,6 +69,7 @@ public class MyActivity extends ListActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         List<String> events = getEventList();
+        events.add("Ragnvald");
         setListAdapter(new ArrayAdapter(this, android.R.layout.simple_list_item_1, events));
 //        Intent intent = getIntent();
 //        if (intent.getAction() == Intent.ACTION_VIEW) {
@@ -71,8 +82,6 @@ public class MyActivity extends ListActivity {
     @Override
     public void onListItemClick(ListView list, View v, int position, long id) {
         super.onListItemClick(list, v, position, id);
-        //new Intent(this, MyActivity.class);
-        startActivity(new Intent(Intent.ACTION_CALL, Uri.parse("sip:lys01-3-didrik2@cisco.com")));
-        //startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.python.com")));
+        startActivity(new Intent(Intent.ACTION_CALL, Uri.parse("sip:bnordlun.meet@cisco.com")));
     }
 }
