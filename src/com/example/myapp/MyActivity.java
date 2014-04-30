@@ -16,14 +16,22 @@ import android.widget.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+class Meeting {
+    public String displayName;
+    public String sipAddress;
+    public String toString() {
+        return displayName;
+    }
+}
+
 public class MyActivity extends ListActivity {
-    private List<String> getEventList() {
+    private List<Meeting> getEventList() {
         GregorianCalendar beginWindow = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-        beginWindow.setTime(new Date());
+        beginWindow.setTime(new Date(Integer.MIN_VALUE));
         beginWindow.roll(Calendar.DAY_OF_MONTH, false);
 
         GregorianCalendar endWindow = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-        endWindow.setTime(new Date());
+        endWindow.setTime(new Date(Integer.MAX_VALUE));
         endWindow.roll(Calendar.DAY_OF_MONTH, true);
 
         String[] projection =
@@ -40,7 +48,7 @@ public class MyActivity extends ListActivity {
                 beginWindow.getTimeInMillis(),
                 endWindow.getTimeInMillis());
         SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy hh:mm");
-        ArrayList<String> result = new ArrayList<String>();
+        ArrayList<Meeting> result = new ArrayList<Meeting>();
         if (calCursor.moveToFirst()) {
             do {
                 long id = calCursor.getLong(0);
@@ -52,14 +60,22 @@ public class MyActivity extends ListActivity {
                 long eventId = calCursor.getLong(3);
                 Cursor attendeeCursor = CalendarContract.Attendees.query(getContentResolver(), eventId, new String[] {CalendarContract.Attendees.ATTENDEE_EMAIL, CalendarContract.Attendees.ATTENDEE_RELATIONSHIP});
                 String email = "";
+                String sipAddress = "";
                 if (attendeeCursor.moveToFirst()) {
                     do {
                         if (attendeeCursor.getInt(1) == CalendarContract.Attendees.RELATIONSHIP_ORGANIZER) {
                             email = attendeeCursor.getString(0);
+                            // split @ prefix + ".meet" + "@" + suffix
+                            String[] prefixAndSuffix = email.split("@");
+                            sipAddress = prefixAndSuffix[0] + ".meet@" + prefixAndSuffix[1];
                         }
                     } while (attendeeCursor.moveToNext());
                 }
-                result.add(title + " " + formatter.format(begin.getTime()) + " " + formatter.format(end.getTime()) + " " + "organizer mail: " + email);
+                Meeting meeting = new Meeting();
+                meeting.displayName = title + " " + formatter.format(begin.getTime()) + " " + formatter.format(end.getTime()) + " " + "organizer mail: " + email;
+                meeting.sipAddress = sipAddress;
+                System.out.println("added " + sipAddress);
+                result.add(meeting);
             } while (calCursor.moveToNext());
         }
         return result;
@@ -68,8 +84,8 @@ public class MyActivity extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        List<String> events = getEventList();
-        events.add("Ragnvald");
+        List<Meeting> events = getEventList();
+        System.out.println("got here");
         setListAdapter(new ArrayAdapter(this, android.R.layout.simple_list_item_1, events));
 //        Intent intent = getIntent();
 //        if (intent.getAction() == Intent.ACTION_VIEW) {
